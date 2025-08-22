@@ -1,4 +1,4 @@
-module github.com/mathismqn/godeez
+module github.com/felipemarinho97/godeez
 
 go 1.24.0
 

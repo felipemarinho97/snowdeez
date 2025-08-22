@@ -4,10 +4,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/felipemarinho97/godeez/internal/deezer"
 	"github.com/go-flac/flacpicture/v2"
 	"github.com/go-flac/flacvorbis/v2"
 	"github.com/go-flac/go-flac/v2"
-	"github.com/mathismqn/godeez/internal/deezer"
 )
 
 type flacTagger struct {

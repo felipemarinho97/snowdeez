@@ -13,14 +13,14 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
-	"github.com/mathismqn/godeez/internal/bpm"
-	"github.com/mathismqn/godeez/internal/config"
-	"github.com/mathismqn/godeez/internal/crypto"
-	"github.com/mathismqn/godeez/internal/deezer"
-	"github.com/mathismqn/godeez/internal/fileutil"
-	"github.com/mathismqn/godeez/internal/logger"
-	"github.com/mathismqn/godeez/internal/store"
-	"github.com/mathismqn/godeez/internal/tags"
+	"github.com/felipemarinho97/godeez/internal/bpm"
+	"github.com/felipemarinho97/godeez/internal/config"
+	"github.com/felipemarinho97/godeez/internal/crypto"
+	"github.com/felipemarinho97/godeez/internal/deezer"
+	"github.com/felipemarinho97/godeez/internal/fileutil"
+	"github.com/felipemarinho97/godeez/internal/logger"
+	"github.com/felipemarinho97/godeez/internal/store"
+	"github.com/felipemarinho97/godeez/internal/tags"
 )
 
 const chunkSize = 2048
@@ -187,7 +187,7 @@ func (c *Client) downloadSong(ctx context.Context, resource deezer.Resource, son
 
 	// Use the organized tree structure for all songs
 	outputPath := song.GetOrganizedPath(c.appConfig.OutputDir, media)
-	
+
 	// Ensure the directory exists
 	if err := fileutil.EnsureDir(outputPath[:len(outputPath)-len(path.Base(outputPath))]); err != nil {
 		return nil, fmt.Errorf("failed to create output directory: %w", err)
@@ -378,19 +378,19 @@ func (c *Client) createM3UPlaylist(resource deezer.Resource, playlistDir string)
 		mockMedia := &deezer.Media{
 			Data: []struct {
 				Media []struct {
-					Type    string              `json:"media_type"`
-					Cipher  deezer.Cipher       `json:"cipher"`
-					Format  string              `json:"format"`
-					Sources []deezer.Source     `json:"sources"`
+					Type    string          `json:"media_type"`
+					Cipher  deezer.Cipher   `json:"cipher"`
+					Format  string          `json:"format"`
+					Sources []deezer.Source `json:"sources"`
 				}
 				Errors []deezer.MediaError `json:"errors"`
 			}{
 				{
 					Media: []struct {
-						Type    string              `json:"media_type"`
-						Cipher  deezer.Cipher       `json:"cipher"`
-						Format  string              `json:"format"`
-						Sources []deezer.Source     `json:"sources"`
+						Type    string          `json:"media_type"`
+						Cipher  deezer.Cipher   `json:"cipher"`
+						Format  string          `json:"format"`
+						Sources []deezer.Source `json:"sources"`
 					}{
 						{Format: "MP3_320"},
 					},
@@ -400,7 +400,7 @@ func (c *Client) createM3UPlaylist(resource deezer.Resource, playlistDir string)
 
 		// Get the organized path for this song
 		songPath := song.GetOrganizedPath(c.appConfig.OutputDir, mockMedia)
-		
+
 		// Calculate relative path from playlist directory to song file
 		relativePath, err := filepath.Rel(playlistDir, songPath)
 		if err != nil {
@@ -413,7 +413,7 @@ func (c *Client) createM3UPlaylist(resource deezer.Resource, playlistDir string)
 		if song.Duration != "" {
 			duration = song.Duration
 		}
-		
+
 		trackInfo := fmt.Sprintf("#EXTINF:%s,%s - %s\n", duration, song.Artist, song.GetTitle())
 		if _, err := file.WriteString(trackInfo); err != nil {
 			return fmt.Errorf("failed to write track info: %w", err)

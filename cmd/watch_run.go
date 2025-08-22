@@ -3,8 +3,8 @@ package cmd
 import (
 	"context"
 
-	"github.com/mathismqn/godeez/internal/config"
-	"github.com/mathismqn/godeez/internal/watcher"
+	"github.com/felipemarinho97/godeez/internal/config"
+	"github.com/felipemarinho97/godeez/internal/watcher"
 	"github.com/spf13/cobra"
 )
 

@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/mathismqn/godeez/cmd"
+	"github.com/felipemarinho97/godeez/cmd"
 )
 
 func main() {

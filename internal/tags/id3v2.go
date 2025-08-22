@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/bogem/id3v2/v2"
-	"github.com/mathismqn/godeez/internal/deezer"
+	"github.com/felipemarinho97/godeez/internal/deezer"
 )
 
 type id3v2Tagger struct {

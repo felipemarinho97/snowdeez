@@ -3,8 +3,8 @@ package downloader
 import (
 	"context"
 
-	"github.com/mathismqn/godeez/internal/fileutil"
-	"github.com/mathismqn/godeez/internal/store"
+	"github.com/felipemarinho97/godeez/internal/fileutil"
+	"github.com/felipemarinho97/godeez/internal/store"
 )
 
 type SkipError struct {

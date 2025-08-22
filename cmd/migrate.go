@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mathismqn/godeez/internal/config"
-	"github.com/mathismqn/godeez/internal/migration"
-	"github.com/mathismqn/godeez/internal/store"
+	"github.com/felipemarinho97/godeez/internal/config"
+	"github.com/felipemarinho97/godeez/internal/migration"
+	"github.com/felipemarinho97/godeez/internal/store"
 	"github.com/spf13/cobra"
 )
 

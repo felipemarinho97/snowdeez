@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/mathismqn/godeez/internal/config"
+	"github.com/felipemarinho97/godeez/internal/config"
 )
 
 type Client struct {

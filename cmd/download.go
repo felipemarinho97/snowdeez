@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mathismqn/godeez/internal/config"
-	"github.com/mathismqn/godeez/internal/downloader"
+	"github.com/felipemarinho97/godeez/internal/config"
+	"github.com/felipemarinho97/godeez/internal/downloader"
 	"github.com/spf13/cobra"
 )
 

@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/felipemarinho97/godeez/internal/tags"
 	"github.com/flytam/filenamify"
-	"github.com/mathismqn/godeez/internal/tags"
 	"go.etcd.io/bbolt"
 )
 
