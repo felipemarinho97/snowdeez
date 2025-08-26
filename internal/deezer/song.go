@@ -42,6 +42,9 @@ type Song struct {
 	DiskNumber          string       `json:"DISK_NUMBER"`
 	Copyright           string       `json:"COPYRIGHT"`
 	PhysicalReleaseDate string       `json:"PHYSICAL_RELEASE_DATE"`
+	
+	// Episode-specific fields (only populated for episodes)
+	EpisodeDirectStreamURL string `json:"-"` // Not from JSON, manually set for episodes
 }
 
 func (s *Song) GetTitle() string {

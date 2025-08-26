@@ -47,6 +47,10 @@ func (c *Client) FetchResource(ctx context.Context, resource Resource, id string
 		payload["art_id"] = id
 	case *Track:
 		payload["sng_id"] = id
+	case *Show:
+		payload["show_id"] = id
+	case *Talk:
+		payload["episode_id"] = id
 	default:
 		return fmt.Errorf("unsupported resource type: %T", r)
 	}
@@ -56,7 +60,14 @@ func (c *Client) FetchResource(ctx context.Context, resource Resource, id string
 		return err
 	}
 
-	url := fmt.Sprintf("https://www.deezer.com/ajax/gw-light.php?method=deezer.page%s&input=3&api_version=1.0&api_token=%s", resource.GetType(), c.Session.APIToken)
+	var url string
+	if resource.GetType() == "Episode" {
+		// Episodes use a different method structure
+		url = fmt.Sprintf("https://www.deezer.com/ajax/gw-light.php?method=episode.getData&input=3&api_version=1.0&api_token=%s", c.Session.APIToken)
+	} else {
+		url = fmt.Sprintf("https://www.deezer.com/ajax/gw-light.php?method=deezer.page%s&input=3&api_version=1.0&api_token=%s", resource.GetType(), c.Session.APIToken)
+	}
+
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return err
@@ -77,6 +88,11 @@ func (c *Client) FetchResource(ctx context.Context, resource Resource, id string
 		return err
 	}
 
+	// Temporary debug for talk testing
+	if resource.GetType() == "Talk" {
+		fmt.Printf("DEBUG: Talk API response: %s\n", string(body))
+	}
+
 	if strings.Contains(string(body), `"DATA_ERROR":"playlist::getData"`) {
 		return fmt.Errorf("invalid playlist ID")
 	}
@@ -88,6 +104,12 @@ func (c *Client) FetchResource(ctx context.Context, resource Resource, id string
 	}
 	if strings.Contains(string(body), `"DATA_ERROR":"song::getData"`) {
 		return fmt.Errorf("invalid track ID")
+	}
+	if strings.Contains(string(body), `"DATA_ERROR":"show disabled"`) {
+		return fmt.Errorf("show is disabled")
+	}
+	if strings.Contains(string(body), `"DATA_ERROR":"No data returned"`) {
+		return fmt.Errorf("invalid show ID")
 	}
 	if strings.Contains(string(body), `"results":{}`) {
 		return fmt.Errorf("unexpected response")

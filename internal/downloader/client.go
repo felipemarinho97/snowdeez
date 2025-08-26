@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -21,6 +22,7 @@ import (
 	"github.com/felipemarinho97/godeez/internal/logger"
 	"github.com/felipemarinho97/godeez/internal/store"
 	"github.com/felipemarinho97/godeez/internal/tags"
+	"github.com/flytam/filenamify"
 )
 
 const chunkSize = 2048
@@ -66,6 +68,10 @@ func (c *Client) Run(ctx context.Context, opts Options, id string) error {
 		resource = &deezer.Artist{}
 	case "track":
 		resource = &deezer.Track{}
+	case "show":
+		resource = &deezer.Show{}
+	case "episode":
+		resource = &deezer.Talk{}
 	default:
 		return fmt.Errorf("unsupported resource type: %s", c.resourceType)
 	}
@@ -76,9 +82,14 @@ func (c *Client) Run(ctx context.Context, opts Options, id string) error {
 
 	songs := resource.GetSongs()
 	if len(songs) == 0 {
-		return fmt.Errorf("%s has no songs", c.resourceType)
+		switch c.resourceType {
+		case "show":
+			return fmt.Errorf("show has no episodes")
+		default:
+			return fmt.Errorf("%s has no songs", c.resourceType)
+		}
 	}
-	if c.resourceType == "artist" && len(songs) > opts.Limit {
+	if (c.resourceType == "artist" || c.resourceType == "show") && len(songs) > opts.Limit {
 		songs = songs[:opts.Limit]
 		resource.SetSongs(songs)
 	}
@@ -180,13 +191,35 @@ Files saved to: %s
 func (c *Client) downloadSong(ctx context.Context, resource deezer.Resource, song *deezer.Song, opts Options, outputDir string) ([]string, error) {
 	var warnings []string
 
+	if c.resourceType == "show" || c.resourceType == "episode" {
+		return c.downloadEpisode(ctx, resource, song, opts, outputDir)
+	}
+
 	media, err := c.deezerClient.FetchMedia(ctx, song, opts.Quality)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch media: %w", err)
 	}
 
 	// Use the organized tree structure for all songs
-	outputPath := song.GetOrganizedPath(c.appConfig.OutputDir, media)
+	var outputPath string
+	if c.resourceType == "show" {
+		// For shows, we need to use the episode's organized path method
+		// First, find the original episode data from the resource
+		if show, ok := resource.(*deezer.Show); ok {
+			// Find the matching episode
+			for _, episode := range show.Results.Episodes.Data {
+				if episode.EpisodeID == song.ID {
+					outputPath = episode.GetOrganizedPath(c.appConfig.OutputDir, media)
+					break
+				}
+			}
+		}
+		if outputPath == "" {
+			outputPath = song.GetOrganizedPath(c.appConfig.OutputDir, media)
+		}
+	} else {
+		outputPath = song.GetOrganizedPath(c.appConfig.OutputDir, media)
+	}
 
 	// Ensure the directory exists
 	if err := fileutil.EnsureDir(outputPath[:len(outputPath)-len(path.Base(outputPath))]); err != nil {
@@ -318,6 +351,20 @@ func (c *Client) streamToFile(ctx context.Context, stream io.ReadCloser, outputP
 	return nil
 }
 
+// streamToFileNoCrypto streams data directly to file without decryption (for episodes)
+func (c *Client) streamToFileNoCrypto(ctx context.Context, stream io.ReadCloser, outputPath string) error {
+	defer stream.Close()
+
+	file, err := os.Create(outputPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, stream)
+	return err
+}
+
 func (c *Client) finalizeDownload(resource deezer.Resource, song *deezer.Song, outputPath, mediaFormat string, cover []byte, metrics *bpm.Metrics) []string {
 	var warnings []string
 
@@ -426,4 +473,115 @@ func (c *Client) createM3UPlaylist(resource deezer.Resource, playlistDir string)
 	}
 
 	return nil
+}
+
+// downloadEpisode handles downloading podcast episodes which use direct streaming
+func (c *Client) downloadEpisode(ctx context.Context, resource deezer.Resource, song *deezer.Song, opts Options, outputDir string) ([]string, error) {
+	var warnings []string
+
+	if song.EpisodeDirectStreamURL == "" {
+		return nil, fmt.Errorf("episode has no direct stream URL (episode: %s)", song.ID)
+	}
+
+	mockMedia := &deezer.Media{
+		Data: []struct {
+			Media []struct {
+				Type    string          `json:"media_type"`
+				Cipher  deezer.Cipher   `json:"cipher"`
+				Format  string          `json:"format"`
+				Sources []deezer.Source `json:"sources"`
+			}
+			Errors []deezer.MediaError `json:"errors"`
+		}{
+			{
+				Media: []struct {
+					Type    string          `json:"media_type"`
+					Cipher  deezer.Cipher   `json:"cipher"`
+					Format  string          `json:"format"`
+					Sources []deezer.Source `json:"sources"`
+				}{
+					{Format: "MP3_320"}, // Episodes are typically MP3
+				},
+			},
+		},
+	}
+
+	var outputPath string
+	if show, ok := resource.(*deezer.Show); ok {
+		for _, episode := range show.Results.Episodes.Data {
+			if episode.EpisodeID == song.ID {
+				outputPath = episode.GetOrganizedPath(c.appConfig.OutputDir, mockMedia)
+				break
+			}
+		}
+	} else if talk, ok := resource.(*deezer.Talk); ok {
+		// For individual episodes (Talk), create the proper path: Podcasts/ShowName/EpisodeName.mp3
+		showName, _ := filenamify.Filenamify(talk.Results.ShowName, filenamify.Options{MaxLength: 1000})
+		episodeName, _ := filenamify.Filenamify(talk.Results.EpisodeTitle, filenamify.Options{MaxLength: 1000})
+		outputPath = path.Join(c.appConfig.OutputDir, "Podcasts", showName, episodeName+".mp3")
+	}
+	if outputPath == "" {
+		outputPath = song.GetOrganizedPath(c.appConfig.OutputDir, mockMedia)
+	}
+
+	if err := fileutil.EnsureDir(outputPath[:len(outputPath)-len(path.Base(outputPath))]); err != nil {
+		return nil, fmt.Errorf("failed to create output directory: %w", err)
+	}
+
+	if path, skip := c.shouldSkipDownload(ctx, song.ID, "mp3_320"); skip {
+		return nil, SkipError{Path: path}
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "GET", song.EpisodeDirectStreamURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	client := &http.Client{Timeout: opts.Timeout}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download episode stream: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code from episode stream: %d", resp.StatusCode)
+	}
+
+	if err := c.streamToFileNoCrypto(ctx, resp.Body, outputPath); err != nil {
+		fileutil.DeleteFile(outputPath)
+		return nil, fmt.Errorf("failed to stream episode to file: %w", err)
+	}
+
+	if opts.BPM {
+		warnings = append(warnings, "BPM fetching not supported for podcast episodes")
+	}
+
+	warnings = append(warnings, c.finalizeEpisodeDownload(song, outputPath, "mp3_320", nil)...)
+
+	return warnings, nil
+}
+
+// finalizeEpisodeDownload is similar to finalizeDownload but for episodes
+func (c *Client) finalizeEpisodeDownload(song *deezer.Song, outputPath, mediaFormat string, cover []byte) []string {
+	var warnings []string
+
+	tempShow := &deezer.Show{}
+	tempShow.Results.Data.ShowName = song.Artist
+
+	if err := tags.AddTags(tempShow, song, cover, outputPath, "", ""); err != nil {
+		warnings = append(warnings, fmt.Sprintf("failed to write tags: %v", err))
+	}
+
+	downloadInfo := &store.DownloadInfo{
+		SongID:  song.ID,
+		Path:    outputPath,
+		Quality: mediaFormat,
+	}
+
+	if err := downloadInfo.Save(); err != nil {
+		warnings = append(warnings, fmt.Sprintf("failed to save download info: %v", err))
+	}
+
+	return warnings
 }

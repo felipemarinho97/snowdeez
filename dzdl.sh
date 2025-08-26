@@ -44,6 +44,7 @@ show_help() {
     printf "    album, a               Search and download albums\n"
     printf "    artist, ar             Search and download artist discography\n"
     printf "    playlist, p            Search and download playlists\n"
+    printf "    show, s                Search and download podcast shows\n"
     printf "    quick, q               Quick track download (no confirmation)\n\n"
     printf "${BOLD}OPTIONS:${NC}\n"
     printf "    -q, --quality QUALITY   Download quality: flac, 320, 128\n"
@@ -61,6 +62,8 @@ show_help() {
     printf "    %s a -l 5 \"pink floyd\"            # 5 albums by Pink Floyd\n" "$SCRIPT_NAME"
     printf "    %s playlist \"rock classics\"        # search playlists\n" "$SCRIPT_NAME"
     printf "    %s p -q 320 --yes \"80s hits\"     # auto-download playlist\n" "$SCRIPT_NAME"
+    printf "    %s show \"flow podcast\"             # search podcast shows\n" "$SCRIPT_NAME"
+    printf "    %s s -l 5 \"joe rogan\"             # 5 episodes from Joe Rogan\n" "$SCRIPT_NAME"
     printf "    %s quick \"money pink floyd\"        # quick download, no confirmation\n" "$SCRIPT_NAME"
     printf "    %s q --bpm \"bohemian rhapsody\"    # quick with BPM\n" "$SCRIPT_NAME"
     printf "    %s artist \"pink floyd\"             # artist discography\n\n" "$SCRIPT_NAME"
@@ -121,6 +124,11 @@ parse_command() {
             COMMAND_TYPE="playlist"
             return 0
             ;;
+        show|s)
+            TYPE="show"
+            COMMAND_TYPE="show"
+            return 0
+            ;;
         quick|q)
             TYPE="track"
             COMMAND_TYPE="quick"
@@ -136,11 +144,11 @@ parse_command() {
 # Validate search type
 validate_type() {
     case "$1" in
-        track|album|artist|playlist)
+        track|album|artist|playlist|show)
             return 0
             ;;
         *)
-            print_color "$RED" "Error: Invalid type '$1'. Must be one of: track, album, artist, playlist"
+            print_color "$RED" "Error: Invalid type '$1'. Must be one of: track, album, artist, playlist, show"
             exit 1
             ;;
     esac

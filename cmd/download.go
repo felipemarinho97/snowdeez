@@ -36,6 +36,8 @@ func init() {
 		newDownloadCmd("playlist"),
 		newDownloadCmd("artist"),
 		newDownloadCmd("track"),
+		newDownloadCmd("show"),
+		newDownloadCmd("episode"),
 	)
 }
 
@@ -85,6 +87,15 @@ func newDownloadCmd(resourceType string) *cobra.Command {
 
 	if resourceType == "track" {
 		cmd.Short = "Download a single track"
+	}
+
+	if resourceType == "show" {
+		cmd.Flags().IntVarP(&opts.Limit, "limit", "l", 10, "number of episodes to download")
+		cmd.Short = "Download episodes from a podcast show"
+	}
+
+	if resourceType == "episode" {
+		cmd.Short = "Download a single episode"
 	}
 
 	return cmd
