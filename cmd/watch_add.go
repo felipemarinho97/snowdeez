@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mathismqn/godeez/internal/store"
+	"github.com/felipemarinho97/godeez/internal/store"
 	"github.com/spf13/cobra"
 )
 

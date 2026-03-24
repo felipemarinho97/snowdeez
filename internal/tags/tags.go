@@ -4,9 +4,9 @@ import (
 	"path"
 
 	"github.com/bogem/id3v2/v2"
+	"github.com/felipemarinho97/godeez/internal/deezer"
 	"github.com/go-flac/flacvorbis/v2"
 	"github.com/go-flac/go-flac/v2"
-	"github.com/mathismqn/godeez/internal/deezer"
 )
 
 type tagger interface {

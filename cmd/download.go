@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mathismqn/godeez/internal/config"
-	"github.com/mathismqn/godeez/internal/downloader"
+	"github.com/felipemarinho97/godeez/internal/config"
+	"github.com/felipemarinho97/godeez/internal/downloader"
 	"github.com/spf13/cobra"
 )
 
@@ -35,6 +35,9 @@ func init() {
 		newDownloadCmd("album"),
 		newDownloadCmd("playlist"),
 		newDownloadCmd("artist"),
+		newDownloadCmd("track"),
+		newDownloadCmd("show"),
+		newDownloadCmd("episode"),
 	)
 }
 
@@ -80,6 +83,19 @@ func newDownloadCmd(resourceType string) *cobra.Command {
 	if resourceType == "artist" {
 		cmd.Flags().IntVarP(&opts.Limit, "limit", "l", 10, "number of songs to download")
 		cmd.Short = "Download top songs from an artist"
+	}
+
+	if resourceType == "track" {
+		cmd.Short = "Download a single track"
+	}
+
+	if resourceType == "show" {
+		cmd.Flags().IntVarP(&opts.Limit, "limit", "l", 10, "number of episodes to download")
+		cmd.Short = "Download episodes from a podcast show"
+	}
+
+	if resourceType == "episode" {
+		cmd.Short = "Download a single episode"
 	}
 
 	return cmd

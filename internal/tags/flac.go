@@ -4,10 +4,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/felipemarinho97/godeez/internal/deezer"
 	"github.com/go-flac/flacpicture/v2"
 	"github.com/go-flac/flacvorbis/v2"
 	"github.com/go-flac/go-flac/v2"
-	"github.com/mathismqn/godeez/internal/deezer"
 )
 
 type flacTagger struct {
@@ -30,9 +30,16 @@ func (t *flacTagger) addTags(resource deezer.Resource, song *deezer.Song, cover 
 		t.addTag("DATE", album.Results.Data.PhysicalReleaseDate)
 		t.addTag("COMMENT", album.Results.Data.ProducerLine)
 		t.addTag("TRACKNUMBER", song.TrackNumber)
+		t.addTag("DISCNUMBER", song.DiskNumber)
+	} else {
+		t.addTag("ALBUM", song.AlbumTitle)
+		t.addTag("ALBUMARTIST", song.Artist)
+		t.addTag("DATE", song.PhysicalReleaseDate)
+		t.addTag("TRACKNUMBER", song.TrackNumber)
+		t.addTag("DISCNUMBER", song.DiskNumber)
 	}
 
-	t.addTag("TITLE", song.Title)
+	t.addTag("TITLE", song.GetTitle())
 	t.addTag("ARTIST", strings.Join(song.Contributors.MainArtists, ", "))
 	t.addTag("COMPOSER", strings.Join(song.Contributors.Composers, ", "))
 	t.addTag("LYRICIST", strings.Join(song.Contributors.Authors, ", "))

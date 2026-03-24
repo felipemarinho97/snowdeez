@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/mathismqn/godeez/internal/config"
-	"github.com/mathismqn/godeez/internal/downloader"
-	"github.com/mathismqn/godeez/internal/logger"
-	"github.com/mathismqn/godeez/internal/store"
+	"github.com/felipemarinho97/godeez/internal/config"
+	"github.com/felipemarinho97/godeez/internal/downloader"
+	"github.com/felipemarinho97/godeez/internal/logger"
+	"github.com/felipemarinho97/godeez/internal/store"
 )
 
 type Watcher struct {
